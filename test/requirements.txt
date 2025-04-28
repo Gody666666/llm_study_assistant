@@ -1,0 +1,6 @@
+requests>=2.31.0
+ollama>=0.1.7
+langchain>=0.1.0
+langchain-community>=0.0.10
+chromadb>=0.4.22
+pypdf>=3.17.1 
