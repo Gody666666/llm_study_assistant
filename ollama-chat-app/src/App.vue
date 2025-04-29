@@ -1,12 +1,20 @@
 <template>
   <v-app>
-    <AppBar @open-settings="showSettings = true" />
+    <AppBar 
+      @open-settings="showSettings = true"
+      @open-debug="showDebugPanel = true; fetchRawMessages()"
+    />
     
     <SettingsDialog
       v-model="showSettings"
       :available-models="availableModels"
       :selected-model="selectedModel"
       @model-change="handleModelChange"
+    />
+
+    <DebugPanel
+      v-model="showDebugPanel"
+      :messages="rawMessages"
     />
 
     <!-- Main Content -->
@@ -30,11 +38,6 @@
         </v-row>
       </v-container>
     </v-main>
-
-    <DebugPanel
-      v-model="showDebugPanel"
-      :messages="rawMessages"
-    />
   </v-app>
 </template>
 

@@ -89,9 +89,6 @@ AI:"""
     def get_response(self, message: str) -> str:
         """Get a response from the model"""
         try:
-            # Add the user's message to chat history
-            self.memory.chat_memory.add_user_message(message)
-            
             # Get response from the chain using invoke
             result = self.chain.invoke({"input": message})
             
@@ -105,9 +102,6 @@ AI:"""
                 response = result[0].content if hasattr(result[0], 'content') else str(result[0])
             else:
                 response = str(result)
-            
-            # Add the assistant's response to chat history
-            self.memory.chat_memory.add_ai_message(response)
             
             return response
         except Exception as e:
