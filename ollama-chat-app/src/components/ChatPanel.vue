@@ -112,6 +112,7 @@
 <script lang="ts">
 import { defineComponent, ref, watch, onMounted } from 'vue'
 import axios from 'axios'
+import { AIMessage, HumanMessage, BaseMessage } from '@langchain/core/messages'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -167,6 +168,49 @@ export default defineComponent({
       })
     }
 
+    const parseLangChainMessage = (message: string): string => {
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(message)
+        if (parsed.content) {
+          return parsed.content
+        }
+      } catch (e) {
+        // If not JSON, try to parse as LangChain message
+        if (message.includes('AIMessage(content=')) {
+          // Extract the content part
+          const contentMatch = message.match(/content=(.*?)(?:\)|$)/)
+          if (contentMatch) {
+            let content = contentMatch[1]
+            // Handle nested Response objects
+            if (content.includes('Response(content=\'')) {
+              const responseMatch = content.match(/Response\(content='(.*?)'\)/)
+              if (responseMatch) {
+                return responseMatch[1].replace(/\\'/g, "'")
+              }
+            }
+            // Handle nested AIMessage with Response
+            if (content.includes('AIMessage(content="Response(content=\'')) {
+              const nestedMatch = content.match(/Response\(content='(.*?)'\)/)
+              if (nestedMatch) {
+                return nestedMatch[1].replace(/\\'/g, "'")
+              }
+            }
+            // Clean up any remaining quotes and escaped characters
+            return content.replace(/^['"]|['"]$/g, '').replace(/\\'/g, "'")
+          }
+        }
+        // Handle direct Response format
+        if (message.includes('Response(content=\'')) {
+          const responseMatch = message.match(/Response\(content='(.*?)'\)/)
+          if (responseMatch) {
+            return responseMatch[1].replace(/\\'/g, "'")
+          }
+        }
+      }
+      return message
+    }
+
     const handleSend = async () => {
       if (!localPrompt.value.trim() && !localImageFile.value) return
       if (isWaitingForResponse.value) return
@@ -194,8 +238,10 @@ export default defineComponent({
           formData.append('image', localImageFile.value)
         }
 
+        // Ensure we have a valid model name
+        const modelName = props.selectedModel || 'llama3.1:latest'
         const response = await axios.post(
-          `http://localhost:5000/api/chat/${props.selectedModel}`,
+          `http://localhost:5000/api/chat/${modelName}`,
           formData,
           {
             headers: {
@@ -213,7 +259,7 @@ export default defineComponent({
             try {
               const data = JSON.parse(line.slice(6))
               if (data.response) {
-                assistantMessage += data.response
+                assistantMessage = parseLangChainMessage(data.response)
               }
             } catch (e) {
               console.error('Error parsing SSE data:', e)
@@ -248,12 +294,23 @@ export default defineComponent({
       }
     }
 
+    const newChat = async () => {
+      try {
+        // Clear chat history on the backend
+        await axios.delete('http://localhost:5000/api/chat/history')
+        emit('new-chat')
+      } catch (error) {
+        console.error('Error clearing chat history:', error)
+      }
+    }
+
     return {
       localPrompt,
       localImageFile,
       isWaitingForResponse,
       chatContainer,
-      handleSend
+      handleSend,
+      newChat
     }
   }
 })

@@ -30,6 +30,11 @@
         </v-row>
       </v-container>
     </v-main>
+
+    <DebugPanel
+      v-model="showDebugPanel"
+      :messages="rawMessages"
+    />
   </v-app>
 </template>
 
@@ -40,6 +45,7 @@ import AppBar from './components/AppBar.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import ChatPanel from './components/ChatPanel.vue'
 import TextbookPanel from './components/TextbookPanel.vue'
+import DebugPanel from './components/DebugPanel.vue'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -58,13 +64,16 @@ export default defineComponent({
     AppBar,
     SettingsDialog,
     ChatPanel,
-    TextbookPanel
+    TextbookPanel,
+    DebugPanel
   },
   setup() {
     const showSettings = ref(false)
     const selectedModel = ref('')
     const availableModels = ref<Model[]>([])
     const isLoading = ref(false)
+    const showDebugPanel = ref(false)
+    const rawMessages = ref([])
     const chatHistory = ref<ChatMessage[]>([
       {
         role: 'assistant',
@@ -84,6 +93,15 @@ export default defineComponent({
       }
     }
 
+    const fetchRawMessages = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/chat/raw-messages')
+        rawMessages.value = response.data.messages
+      } catch (error) {
+        console.error('Error fetching raw messages:', error)
+      }
+    }
+
     const handleModelChange = () => {
       chatHistory.value = [{
         role: 'assistant',
@@ -98,7 +116,6 @@ export default defineComponent({
       }]
     }
 
-    // Fetch models when component is mounted
     onMounted(() => {
       fetchModels()
     })
@@ -108,9 +125,12 @@ export default defineComponent({
       selectedModel,
       availableModels,
       isLoading,
+      showDebugPanel,
+      rawMessages,
       chatHistory,
       handleModelChange,
-      startNewChat
+      startNewChat,
+      fetchRawMessages
     }
   }
 })

@@ -11,6 +11,7 @@ class PDFManager:
         self.resources_dir = Path(resources_dir)
         self.embeddings = OllamaEmbeddings(base_url='http://localhost:11434', model="llama3.1")
         self.vector_stores: Dict[str, Chroma] = {}
+        self.textbooks: Dict[str, Dict] = {}
         self.available_pdfs: Dict[str, Dict] = {}
         self._load_pdf_index()
         
@@ -19,10 +20,11 @@ class PDFManager:
         index_file = self.resources_dir / "pdf_index.json"
         if index_file.exists():
             with open(index_file, 'r', encoding='utf-8') as f:
-                self.available_pdfs = {
-                    pdf["hash"]: pdf
-                    for pdf in json.load(f)
-                }
+                self.textbooks = json.load(f)
+                # Create a flat list of all PDFs for easy access
+                for textbook in self.textbooks.values():
+                    for chapter in textbook["chapters"]:
+                        self.available_pdfs[chapter["hash"]] = chapter
     
     def get_available_pdfs(self) -> List[Dict]:
         """Get list of all available PDFs"""
