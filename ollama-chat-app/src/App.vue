@@ -27,6 +27,7 @@
               v-model:chatHistory="chatHistory"
               :selected-model="selectedModel"
               :is-loading="isLoading"
+              :modelInfo="currentModelInfo"
               @new-chat="startNewChat"
             />
           </v-col>
@@ -42,7 +43,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
+import { defineComponent, ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import AppBar from './components/AppBar.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
@@ -84,6 +85,13 @@ export default defineComponent({
       }
     ])
 
+    const currentModelInfo = computed(() => {
+      return availableModels.value.find(model => model.name === selectedModel.value) || {
+        name: '',
+        supportsVision: false
+      }
+    })
+
     const fetchModels = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/models')
@@ -105,7 +113,8 @@ export default defineComponent({
       }
     }
 
-    const handleModelChange = () => {
+    const handleModelChange = (model: Model) => {
+      selectedModel.value = model.name
       chatHistory.value = [{
         role: 'assistant',
         content: 'Hi there! I\'m your study buddy. How can I help you today?'
@@ -133,7 +142,8 @@ export default defineComponent({
       chatHistory,
       handleModelChange,
       startNewChat,
-      fetchRawMessages
+      fetchRawMessages,
+      currentModelInfo
     }
   }
 })

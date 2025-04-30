@@ -25,16 +25,23 @@ resources_dir = current_dir.parent / "resources"
 def get_available_models() -> List[Dict]:
     """Get list of available models from Ollama"""
     try:
+        # Get list of models
         response = requests.get(f"{OLLAMA_API_URL}/api/tags")
         if response.status_code == 200:
             models = response.json().get("models", [])
-            return [
-                {
+            available_models = []
+            
+            for model in models:
+                # Check if model name contains vision-related keywords
+                model_name = model["name"].lower()
+                supports_vision = any(keyword in model_name for keyword in ["vision", "llava", "bakllava"])
+                
+                available_models.append({
                     "name": model["name"],
-                    "supportsVision": "vision" in model["name"].lower()
-                }
-                for model in models
-            ]
+                    "supportsVision": supports_vision
+                })
+            
+            return available_models
     except Exception as e:
         print(f"Error fetching models: {e}")
     return []

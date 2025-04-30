@@ -54,7 +54,8 @@ export default defineComponent({
     })
 
     const handleModelChange = () => {
-      emit('model-change', localModel.value)
+      const selectedModelObj = props.availableModels.find(model => model.name === localModel.value)
+      emit('model-change', selectedModelObj)
     }
 
     return {

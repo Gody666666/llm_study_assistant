@@ -77,16 +77,25 @@
         ></v-textarea>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
-        <v-file-input
-          v-model="localImageFile"
-          hide-details
-          class="shrink"
-          accept="image/*"
-          icon="mdi-camera"
-          variant="plain"
-          density="comfortable"
-          :disabled="isWaitingForResponse"
-        ></v-file-input>
+        <v-tooltip
+          :text="supportsVision ? 'Upload an image to use with the model' : 'Current model does not support image input'"
+          location="top"
+        >
+          <template v-slot:activator="{ props: tooltipProps }">
+            <div v-bind="tooltipProps">
+              <v-file-input
+                v-model="localImageFile"
+                hide-details
+                class="shrink"
+                accept="image/*"
+                icon="mdi-camera"
+                variant="plain"
+                density="comfortable"
+                :disabled="isWaitingForResponse || !supportsVision"
+              ></v-file-input>
+            </div>
+          </template>
+        </v-tooltip>
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
@@ -110,7 +119,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted } from 'vue'
+import { defineComponent, ref, watch, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { AIMessage, HumanMessage, BaseMessage } from '@langchain/core/messages'
 
@@ -139,6 +148,10 @@ export default defineComponent({
     isLoading: {
       type: Boolean,
       default: false
+    },
+    modelInfo: {
+      type: Object as () => Model,
+      required: true
     }
   },
   emits: ['update:chatHistory', 'new-chat'],
@@ -147,6 +160,8 @@ export default defineComponent({
     const localImageFile = ref<File | null>(null)
     const isWaitingForResponse = ref(false)
     const chatContainer = ref<HTMLElement | null>(null)
+
+    const supportsVision = computed(() => props.modelInfo?.supportsVision || false)
 
     const scrollToBottom = () => {
       if (chatContainer.value) {
@@ -310,7 +325,8 @@ export default defineComponent({
       isWaitingForResponse,
       chatContainer,
       handleSend,
-      newChat
+      newChat,
+      supportsVision
     }
   }
 })
