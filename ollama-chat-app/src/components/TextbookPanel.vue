@@ -17,8 +17,8 @@
           <div v-for="chapter in sortedChapters(book.chapters)" 
                :key="chapter.chapter" 
                class="chapter-item"
-               :class="{ 'selected': selectedChapters.includes(chapter.chapter) }"
-               @click="toggleChapter(chapter)">
+               :class="{ 'selected': book.selectedChapters.includes(chapter.chapter) }"
+               @click="toggleChapter(book, chapter)">
             <img :src="getPreviewUrl(chapter.preview_image)" :alt="chapter.title" class="chapter-preview">
             <span>{{ chapter.title }}</span>
           </div>
@@ -44,6 +44,7 @@ interface Textbook {
   cover_image: string
   chapters: Chapter[]
   title: string
+  selectedChapters: string[]
 }
 
 interface Textbooks {
@@ -56,12 +57,15 @@ export default defineComponent({
     const textbooks = ref<Textbooks>({})
     const loading = ref(true)
     const error = ref<string | null>(null)
-    const selectedChapters = ref<string[]>([])
 
     const fetchTextbooks = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/pdf/index')
-        textbooks.value = response.data
+        const books = response.data
+        Object.keys(books).forEach(bookKey => {
+          books[bookKey].selectedChapters = []
+        })
+        textbooks.value = books
       } catch (err) {
         error.value = 'Failed to load textbooks'
         console.error('Error loading textbooks:', err)
@@ -78,12 +82,12 @@ export default defineComponent({
       return [...chapters].sort((a, b) => a.order - b.order)
     }
 
-    const toggleChapter = (chapter: Chapter) => {
-      const index = selectedChapters.value.indexOf(chapter.chapter)
+    const toggleChapter = (book: Textbook, chapter: Chapter) => {
+      const index = book.selectedChapters.indexOf(chapter.chapter)
       if (index === -1) {
-        selectedChapters.value.push(chapter.chapter)
+        book.selectedChapters.push(chapter.chapter)
       } else {
-        selectedChapters.value.splice(index, 1)
+        book.selectedChapters.splice(index, 1)
       }
       // TODO: Emit selection change event
     }
@@ -97,7 +101,6 @@ export default defineComponent({
       loading,
       error,
       getPreviewUrl,
-      selectedChapters,
       sortedChapters,
       toggleChapter
     }
