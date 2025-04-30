@@ -34,7 +34,7 @@
 
           <!-- Textbook Panel (Right Side - 30%) -->
           <v-col cols="4" class="grey-lighten-4 fill-height">
-            <TextbookPanel />
+            <TextbookPanel @chapters-change="handleChaptersChange" />
           </v-col>
         </v-row>
       </v-container>
@@ -136,6 +136,17 @@ export default defineComponent({
       }
     }
 
+    const handleChaptersChange = async (data: { bookTitle: string, selectedChapters: string[], pdfHashes: string[] }) => {
+      try {
+        await axios.post('http://localhost:5000/api/pdf/active', {
+          book_title: data.bookTitle,
+          pdf_hashes: data.pdfHashes
+        })
+      } catch (error) {
+        console.error('Error updating active PDFs:', error)
+      }
+    }
+
     onMounted(() => {
       fetchModels()
     })
@@ -151,7 +162,8 @@ export default defineComponent({
       handleModelChange,
       startNewChat,
       fetchRawMessages,
-      currentModelInfo
+      currentModelInfo,
+      handleChaptersChange
     }
   }
 })

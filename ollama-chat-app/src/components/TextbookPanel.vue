@@ -37,6 +37,7 @@ interface Chapter {
   preview_image: string
   order: number
   title: string
+  hash: string
 }
 
 interface Textbook {
@@ -53,7 +54,7 @@ interface Textbooks {
 
 export default defineComponent({
   name: 'TextbookPanel',
-  setup() {
+  setup(props, { emit }) {
     const textbooks = ref<Textbooks>({})
     const loading = ref(true)
     const error = ref<string | null>(null)
@@ -82,14 +83,29 @@ export default defineComponent({
       return [...chapters].sort((a, b) => a.order - b.order)
     }
 
-    const toggleChapter = (book: Textbook, chapter: Chapter) => {
+    const toggleChapter = async (book: Textbook, chapter: Chapter) => {
       const index = book.selectedChapters.indexOf(chapter.chapter)
       if (index === -1) {
         book.selectedChapters.push(chapter.chapter)
       } else {
         book.selectedChapters.splice(index, 1)
       }
-      // TODO: Emit selection change event
+      
+      try {
+        // Get all selected PDF hashes directly from the chapter metadata
+        const selectedHashes = book.selectedChapters.map(chapterName => {
+          const chapter = book.chapters.find(c => c.chapter === chapterName)
+          return chapter?.hash || null
+        }).filter(hash => hash !== null)
+        
+        emit('chapters-change', {
+          bookTitle: book.book_title,
+          selectedChapters: book.selectedChapters,
+          pdfHashes: selectedHashes
+        })
+      } catch (error) {
+        console.error('Error getting PDF hashes:', error)
+      }
     }
 
     onMounted(() => {
@@ -104,7 +120,8 @@ export default defineComponent({
       sortedChapters,
       toggleChapter
     }
-  }
+  },
+  emits: ['chapters-change']
 })
 </script>
 

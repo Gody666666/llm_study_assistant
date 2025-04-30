@@ -18,6 +18,9 @@ OLLAMA_API_URL = "http://localhost:11434"
 chat_manager = ChatManager()
 pdf_manager = PDFManager()
 
+# Store selected chapters per book
+selected_chapters = {}
+
 # Get the absolute path to the resources directory
 current_dir = Path(__file__).parent
 resources_dir = current_dir.parent / "resources"
@@ -61,13 +64,35 @@ def get_active_pdfs():
     """Get list of active PDFs in the current conversation"""
     return jsonify(chat_manager.get_active_pdfs())
 
-@app.route('/api/pdfs/active', methods=['POST'])
+@app.route('/api/pdf/active', methods=['POST'])
 def set_active_pdfs():
     """Set which PDFs to use for context"""
     try:
-        pdf_hashes = request.json.get('pdf_hashes', [])
+        data = request.get_json()
+        pdf_hashes = data.get('pdf_hashes', [])
+        book_title = data.get('book_title', '')
+        
+        print(f"Received PDF hashes: {pdf_hashes}")
+        print(f"Book title: {book_title}")
+        
+        # Store selected chapters for the book
+        if book_title:
+            selected_chapters[book_title] = pdf_hashes
+            print(f"Stored chapters for {book_title}: {selected_chapters[book_title]}")
+        
+        # Update active PDFs in chat manager with the actual PDF hashes
         chat_manager.set_active_pdfs(pdf_hashes)
         return jsonify({"message": "Active PDFs updated successfully"})
+    except Exception as e:
+        print(f"Error in set_active_pdfs: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/pdf/active/<book_title>', methods=['GET'])
+def get_active_chapters(book_title: str):
+    """Get active chapters for a specific book"""
+    try:
+        chapters = selected_chapters.get(book_title, [])
+        return jsonify({"chapters": chapters})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -176,6 +201,15 @@ def get_pdf_preview(filename):
         return send_from_directory(resources_dir, filename)
     except Exception as e:
         return jsonify({"error": str(e)}), 404
+
+@app.route('/api/pdf/hash/<path:filename>')
+def get_pdf_hash(filename: str):
+    """Get the hash of a PDF file"""
+    try:
+        pdf_hash = pdf_manager.get_pdf_hash(filename)
+        return jsonify({"hash": pdf_hash})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000) 

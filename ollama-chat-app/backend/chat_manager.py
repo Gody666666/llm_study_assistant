@@ -24,8 +24,8 @@ class ChatManager:
     
     def _update_chain(self):
         """Update the chain with current active PDFs"""
-        # Define the prompt template
-        template = """The following is a friendly conversation between a human and an AI.
+        # Define the base conversation template
+        base_template = """The following is a friendly conversation between a human and an AI.
 
 Current conversation:
 {chat_history}
@@ -38,13 +38,31 @@ Directly give your reponse without any other text.
 Human: {input}
 AI:"""
 
-        prompt = PromptTemplate(
-            input_variables=["chat_history", "input"],
-            template=template
-        )
+        # Define the retrieval template
+        retrieval_template = """The following is a friendly conversation between a human and an AI.
+Use the following pieces of context to answer the question at the end.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+Context:
+{context}
+
+Current conversation:
+{chat_history}
+
+In the conversation above, contents wrapped in HumanMessage are the user's previous messages.
+Contents wrapped in AIMessage are the AI's previous responses. 
+When you are responding to the user's message, you should use the same language as the user's message.
+Directly give your reponse without any other text.
+
+Human: {input}
+AI:"""
 
         if not self.active_pdfs:
             # Create a simple conversation chain without PDF context
+            prompt = PromptTemplate(
+                input_variables=["chat_history", "input"],
+                template=base_template
+            )
             self.chain = ConversationChain(
                 llm=self.llm,
                 memory=self.memory,
@@ -62,6 +80,10 @@ AI:"""
         
         if not vector_stores:
             # Fall back to simple conversation chain if no valid vector stores
+            prompt = PromptTemplate(
+                input_variables=["chat_history", "input"],
+                template=base_template
+            )
             self.chain = ConversationChain(
                 llm=self.llm,
                 memory=self.memory,
@@ -71,6 +93,10 @@ AI:"""
             return
         
         # Create a new chain with the combined vector stores
+        prompt = PromptTemplate(
+            input_variables=["chat_history", "input", "context"],
+            template=retrieval_template
+        )
         self.chain = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=vector_stores[0].as_retriever(),  # Use first store for now
@@ -81,8 +107,11 @@ AI:"""
     
     def set_active_pdfs(self, pdf_hashes: List[str]):
         """Set which PDFs to use for context"""
+        print(f"Setting active PDFs: {pdf_hashes}")
         self.active_pdfs = pdf_hashes
+        print(f"Active PDFs after setting: {self.active_pdfs}")
         self._update_chain()
+        print(f"Active PDFs after chain update: {self.active_pdfs}")
     
     def get_active_pdfs(self) -> List[str]:
         """Get list of active PDFs"""
@@ -96,7 +125,7 @@ AI:"""
         """Get a response from the model"""
         try:
             # Prepare the input for the model
-            input_data = {"input": message}
+            input_data = {"question": message} if isinstance(self.chain, ConversationalRetrievalChain) else {"input": message}
             
             # If there's an image, add it to the input in the format Ollama expects
             if image_base64:

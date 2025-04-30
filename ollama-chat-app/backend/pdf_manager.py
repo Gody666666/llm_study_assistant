@@ -50,4 +50,12 @@ class PDFManager:
         metadata = self.get_pdf_metadata(pdf_hash)
         if metadata and "preview_image" in metadata:
             return str(self.resources_dir / metadata["preview_image"])
+        return None
+    
+    def get_pdf_hash(self, filename: str) -> Optional[str]:
+        """Get the hash of a PDF file"""
+        # Find the PDF in available_pdfs by matching the filename
+        for pdf_hash, metadata in self.available_pdfs.items():
+            if metadata.get("preview_image", "").replace('.jpg', '.pdf') == filename:
+                return pdf_hash
         return None 
