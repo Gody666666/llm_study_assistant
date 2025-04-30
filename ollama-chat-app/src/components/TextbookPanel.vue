@@ -8,33 +8,19 @@
       {{ error }}
     </div>
     <div v-else class="textbooks">
-      <div v-for="(textbook, id) in textbooks" :key="id" class="textbook">
+      <div v-for="book in textbooks" :key="book.book_title" class="textbook-section">
         <div class="textbook-header">
-          <img 
-            v-if="textbook.cover_image" 
-            :src="getPreviewUrl(textbook.cover_image)" 
-            :alt="textbook.title"
-            class="textbook-cover"
-          />
-          <h3>{{ textbook.title }}</h3>
+          <img :src="getPreviewUrl(book.cover_image)" :alt="book.title" class="textbook-cover">
+          <h3>{{ book.title }}</h3>
         </div>
-        <div class="chapters">
-          <div 
-            v-for="chapter in textbook.chapters" 
-            :key="chapter.hash"
-            class="chapter"
-          >
-            <div class="chapter-preview">
-              <img 
-                v-if="chapter.preview_image" 
-                :src="getPreviewUrl(chapter.preview_image)" 
-                :alt="chapter.title"
-              />
-            </div>
-            <div class="chapter-info">
-              <h4>{{ chapter.title }}</h4>
-              <p>Pages: {{ chapter.num_pages }}</p>
-            </div>
+        <div class="chapters-list">
+          <div v-for="chapter in sortedChapters(book.chapters)" 
+               :key="chapter.chapter" 
+               class="chapter-item"
+               :class="{ 'selected': selectedChapters.includes(chapter.chapter) }"
+               @click="toggleChapter(chapter)">
+            <img :src="getPreviewUrl(chapter.preview_image)" :alt="chapter.title" class="chapter-preview">
+            <span>{{ chapter.title }}</span>
           </div>
         </div>
       </div>
@@ -43,20 +29,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import axios from 'axios'
 
 interface Chapter {
-  hash: string
+  chapter: string
+  preview_image: string
+  order: number
   title: string
-  preview_image: string | null
-  num_pages: number
 }
 
 interface Textbook {
-  title: string
-  cover_image: string | null
+  book_title: string
+  cover_image: string
   chapters: Chapter[]
+  title: string
 }
 
 interface Textbooks {
@@ -69,6 +56,7 @@ export default defineComponent({
     const textbooks = ref<Textbooks>({})
     const loading = ref(true)
     const error = ref<string | null>(null)
+    const selectedChapters = ref<string[]>([])
 
     const fetchTextbooks = async () => {
       try {
@@ -86,13 +74,32 @@ export default defineComponent({
       return `http://localhost:5000/api/pdf/preview/${path}`
     }
 
-    fetchTextbooks()
+    const sortedChapters = (chapters: Chapter[]) => {
+      return [...chapters].sort((a, b) => a.order - b.order)
+    }
+
+    const toggleChapter = (chapter: Chapter) => {
+      const index = selectedChapters.value.indexOf(chapter.chapter)
+      if (index === -1) {
+        selectedChapters.value.push(chapter.chapter)
+      } else {
+        selectedChapters.value.splice(index, 1)
+      }
+      // TODO: Emit selection change event
+    }
+
+    onMounted(() => {
+      fetchTextbooks()
+    })
 
     return {
       textbooks,
       loading,
       error,
-      getPreviewUrl
+      getPreviewUrl,
+      selectedChapters,
+      sortedChapters,
+      toggleChapter
     }
   }
 })
@@ -107,7 +114,7 @@ export default defineComponent({
   overflow-y: auto;
 }
 
-.textbook {
+.textbook-section {
   margin-bottom: 2rem;
   background-color: white;
   border-radius: 8px;
@@ -118,17 +125,15 @@ export default defineComponent({
 .textbook-header {
   display: flex;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
 }
 
 .textbook-cover {
-  width: 80px;
-  height: 120px;
+  width: 60px;
+  height: 80px;
   object-fit: cover;
   border-radius: 4px;
-  margin-right: 1rem;
 }
 
 .textbook h3 {
@@ -137,48 +142,37 @@ export default defineComponent({
   color: #333;
 }
 
-.chapters {
+.chapters-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 1rem;
 }
 
-.chapter {
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  overflow: hidden;
-  transition: transform 0.2s;
+.chapter-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-.chapter:hover {
-  transform: translateY(-2px);
+.chapter-item:hover {
+  background-color: #e0e0e0;
+}
+
+.chapter-item.selected {
+  background-color: #e3f2fd;
+  border: 2px solid #2196f3;
 }
 
 .chapter-preview {
-  height: 120px;
-  overflow: hidden;
-}
-
-.chapter-preview img {
-  width: 100%;
-  height: 100%;
+  width: 100px;
+  height: 140px;
   object-fit: cover;
-}
-
-.chapter-info {
-  padding: 0.5rem;
-}
-
-.chapter-info h4 {
-  margin: 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.chapter-info p {
-  margin: 0.5rem 0 0;
-  font-size: 0.9rem;
-  color: #666;
+  border-radius: 4px;
 }
 
 .loading {
