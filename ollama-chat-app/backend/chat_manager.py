@@ -24,10 +24,15 @@ class ChatManager:
     def _update_chain(self):
         """Update the chain with current active PDFs"""
         # Define the prompt template
-        template = """The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context.
+        template = """The following is a friendly conversation between a human and an AI.
 
 Current conversation:
 {chat_history}
+
+In the conversation above, contents wrapped in HumanMessage are the user's previous messages.
+Contents wrapped in AIMessage are the AI's previous responses. 
+When you are responding to the user's message, you should use the same language as the user's message.
+Directly give your reponse without any other text.
 
 Human: {input}
 AI:"""
