@@ -8,6 +8,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain.schema import AIMessage, HumanMessage
 from pdf_manager import PDFManager
+import requests
 
 class ChatManager:
     def __init__(self):
@@ -91,11 +92,36 @@ AI:"""
         """Get list of all available PDFs"""
         return self.pdf_manager.get_available_pdfs()
     
-    def get_response(self, message: str) -> str:
+    def get_response(self, message: str, image_base64: Optional[str] = None) -> str:
         """Get a response from the model"""
         try:
-            # Get response from the chain using invoke
-            result = self.chain.invoke({"input": message})
+            # Prepare the input for the model
+            input_data = {"input": message}
+            
+            # If there's an image, add it to the input in the format Ollama expects
+            if image_base64:
+                # Ollama expects images in a specific format
+                input_data = {
+                    "model": self.llm.model,
+                    "prompt": message,
+                    "images": [image_base64],
+                    "stream": False
+                }
+                
+                # Make a direct request to Ollama's API for vision models
+                response = requests.post(
+                    "http://localhost:11434/api/generate",
+                    json=input_data
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get("response", "")
+                else:
+                    return f"Error from Ollama API: {response.text}"
+            
+            # For non-vision requests, use the chain
+            result = self.chain.invoke(input_data)
             
             # Extract the response content
             if isinstance(result, dict):
@@ -107,6 +133,9 @@ AI:"""
                 response = result[0].content if hasattr(result[0], 'content') else str(result[0])
             else:
                 response = str(result)
+            
+            if not response:
+                return "I apologize, but I couldn't process your request. Please try again."
             
             return response
         except Exception as e:

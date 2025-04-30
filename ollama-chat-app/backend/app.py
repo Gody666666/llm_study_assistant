@@ -80,16 +80,31 @@ def chat(model_name: str = None):
         if request.is_json:
             data = request.get_json()
             message = data.get('message') or data.get('prompt')
+            image = None
         else:
             message = request.form.get('message') or request.form.get('prompt')
+            image_file = request.files.get('image')
+            image = image_file.read() if image_file else None
         
-        if not message:
-            return jsonify({"error": "No message or prompt provided"}), 400
+        if not message and not image:
+            return jsonify({"error": "No message or image provided"}), 400
         
         def generate():
             try:
-                response = chat_manager.get_response(message)
-                yield f"data: {json.dumps({'response': response})}\n\n"
+                # Convert image to base64 if present
+                image_base64 = None
+                if image:
+                    image_base64 = base64.b64encode(image).decode('utf-8')
+                
+                # Update the model if specified
+                if model_name:
+                    chat_manager.llm.model = model_name
+                
+                response = chat_manager.get_response(message, image_base64)
+                if not response:
+                    yield f"data: {json.dumps({'error': 'No response from model'})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'response': response})}\n\n"
             except Exception as e:
                 print(f"Chat error: {str(e)}")  # Add logging
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
