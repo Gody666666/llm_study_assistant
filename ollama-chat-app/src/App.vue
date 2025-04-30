@@ -121,11 +121,19 @@ export default defineComponent({
       }]
     }
 
-    const startNewChat = () => {
-      chatHistory.value = [{
-        role: 'assistant',
-        content: 'Hi there! I\'m your study buddy. How can I help you today?'
-      }]
+    const startNewChat = async () => {
+      try {
+        // Clear the chat history
+        chatHistory.value = [{
+          role: 'assistant',
+          content: 'Hi there! I\'m your study buddy. How can I help you today?'
+        }]
+        
+        // Fetch fresh raw messages
+        await fetchRawMessages()
+      } catch (error) {
+        console.error('Error starting new chat:', error)
+      }
     }
 
     onMounted(() => {

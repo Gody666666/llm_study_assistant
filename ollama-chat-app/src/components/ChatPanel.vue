@@ -7,7 +7,7 @@
         variant="outlined"
         class="mb-2"
         block
-        @click="$emit('new-chat')"
+        @click="handleNewChat"
       >
         New chat
       </v-btn>
@@ -313,10 +313,20 @@ export default defineComponent({
       try {
         // Clear chat history on the backend
         await axios.delete('http://localhost:5000/api/chat/history')
+        // Clear local state
+        localPrompt.value = ''
+        localImageFile.value = null
+        isWaitingForResponse.value = false
+        // Emit the new chat event
         emit('new-chat')
       } catch (error) {
         console.error('Error clearing chat history:', error)
       }
+    }
+
+    // Add click handler for the new chat button
+    const handleNewChat = () => {
+      newChat()
     }
 
     return {
@@ -325,7 +335,7 @@ export default defineComponent({
       isWaitingForResponse,
       chatContainer,
       handleSend,
-      newChat,
+      handleNewChat,
       supportsVision
     }
   }

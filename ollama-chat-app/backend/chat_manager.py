@@ -160,6 +160,10 @@ AI:"""
     
     def clear_chat_history(self):
         """Clear the chat history"""
-        self.memory.clear()
-        # Reinitialize the chain to ensure a fresh start
+        # Create a new memory instance
+        self.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True
+        )
+        # Reinitialize the chain with the new memory
         self._update_chain() 
