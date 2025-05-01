@@ -25,19 +25,27 @@ class MultiStoreRetriever(BaseRetriever):
         all_docs = []
         seen_docs = set()  # To avoid duplicates
         
-        for store in self.vector_stores:
+        print(f"---> [MultiStoreRetriever] Received query: {query}")
+        print(f"---> [MultiStoreRetriever] Searching {len(self.vector_stores)} vector stores.")
+
+        for idx, store in enumerate(self.vector_stores):
             try:
+                print(f"---> [MultiStoreRetriever] Searching store {idx+1}...")
                 # Get relevant documents from each store
                 docs = store.similarity_search(query, k=3)  # Get top 3 from each store
+                print(f"---> [MultiStoreRetriever] Store {idx+1} returned {len(docs)} documents.")
                 for doc in docs:
                     # Use a unique identifier for each document
                     doc_id = f"{doc.metadata.get('source', '')}_{doc.page_content[:100]}"
                     if doc_id not in seen_docs:
                         seen_docs.add(doc_id)
                         all_docs.append(doc)
+                    else:
+                        print(f"---> [MultiStoreRetriever] Skipping duplicate doc: {doc_id[:50]}...")
             except Exception as e:
-                print(f"Error retrieving from store: {e}")
+                print(f"Error retrieving from store {idx+1}: {e}")
         
+        print(f"---> [MultiStoreRetriever] Total unique documents found: {len(all_docs)}")
         return all_docs
 
     async def aget_relevant_documents(self, query: str) -> List[Document]:
@@ -143,22 +151,11 @@ AI:"""
             return
         
         # Create a docstore to hold all documents
-        docstore = InMemoryStore()
+        # docstore = InMemoryStore() # Removed: Not used by MultiStoreRetriever.get_relevant_documents
         
         # Create our custom retriever that combines results from all stores
-        retriever = MultiStoreRetriever(vector_stores=vector_stores, docstore=docstore)
-        
-        # Load documents from each vector store into the docstore
-        for store in vector_stores:
-            try:
-                # Get all documents from the store
-                docs = store.get()
-                if docs and len(docs) > 0:
-                    # Store each document with a unique key
-                    for i, doc in enumerate(docs):
-                        docstore.mset([(f"{i}", doc)])  # Use simple index as key
-            except Exception as e:
-                print(f"Error loading documents from store: {e}")
+        # Pass only the vector_stores, docstore is not needed for this implementation
+        retriever = MultiStoreRetriever(vector_stores=vector_stores)
         
         # Create a new chain with our custom retriever
         prompt = PromptTemplate(
