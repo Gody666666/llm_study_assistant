@@ -22,6 +22,10 @@ npm install
 cd ollama-chat-app/backend
 pip install -r requirements.txt
 ```
+Install chromadb separately
+```
+pip install chromadb
+```
 
 ## Run
 
