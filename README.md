@@ -61,7 +61,7 @@ Open your browser and navigate to `http://localhost:8080`
 
 ### Application Design
 
-![Screenshot](images/system.png)
+![Screenshot](images/system2.png)
 
 The system adopts a frontend-backend separated architecture with the following core components:
 
