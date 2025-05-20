@@ -61,8 +61,53 @@ Open your browser and navigate to `http://localhost:8080`
 
 ![Screenshot](images/system.png)
 
-TODO: Add description
+The system adopts a frontend-backend separated architecture with the following core components:
+
+1. **Frontend Interface**
+   - Modern user interface built with Vue.js framework
+   - Intuitive model selection, conversation interaction, and document management
+   - Support for image upload and real-time conversation display
+
+2. **Backend Service**
+   - Intelligent processing engine built with Python and LangChain
+   - Integration with Ollama local LLM service
+   - Document preprocessing and context management
+   - RESTful API endpoints
+
+3. **Document Processing System**
+   - Intelligent parsing and chapter extraction of PDF textbooks
+   - Vector database storage for document content
+   - Context-based intelligent retrieval
+
+4. **Model Service**
+   - Local LLM service provided through Ollama
+   - Support for multiple model switching and configuration
+   - Model inference and response generation
 
 ### Preprocessing Textbooks
 
-TODO: Add description
+The textbook preprocessing system implements a comprehensive PDF processing pipeline with the following features:
+
+1. **Document Processing**
+   - Batch processing of textbook PDF files
+   - Document parsing and metadata extraction using PyPDF2
+   - Automatic chapter order and hierarchy recognition
+   - Support for incremental update mode with metadata-only updates
+
+2. **Text Splitting & Vectorization**
+   - Intelligent text splitting using RecursiveCharacterTextSplitter
+   - Configured with 1000-character chunks and 200-character overlap
+   - Text embedding generation using local Ollama model
+   - Vector storage using ChromaDB
+
+3. **Metadata Management**
+   - Automatic extraction of PDF metadata (title, author, creation date, etc.)
+   - Generation of unique document hashes for version control
+   - Support for textbook covers and chapter preview images
+   - Maintenance of textbook and chapter hierarchy
+
+4. **Index Generation**
+   - Automatic generation of textbook directory structure
+   - Content organization by chapter order
+   - JSON format index file generation
+   - Support for multiple textbook management and retrieval
