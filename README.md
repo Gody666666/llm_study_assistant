@@ -1,6 +1,7 @@
 # Study Assistant with LLM
 
-Presentation video of the achievements（Youtube-Link https://youtu.be/WWeft-UzCGg）
+Presentation video of the achievements[![Watch the video](https://img.youtube.com/vi/WWeft-UzCGg/maxresdefault.jpg)](https://www.youtube.com/watch?v=WWeft-UzCGg)
+
 This web application is an AI-driven study assistant built with Vue and Ollama, designed to enhance productivity and streamline the learning process. Leveraging a dedicated backend powered by LangChain, the app offers interaction with chat history management, image reading capabilities, and contextual understanding of PDF documents. We can also pre-process textbook PDFs and let the user to select specific chapters directly through the UI, allowing the backend to retrieve and provide relevant context to the language model.
 
 ![Screenshot](images/frontend_screenshot.png)
